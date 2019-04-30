@@ -24,3 +24,37 @@ buscas %>%
     geom_histogram(binwidth = 5) 
 ```
 
+What is our daily overall clickthrough rate? How does it vary between the groups?
+Passando os dias, como a média vai evoluindo? Depois add os grupos.
+
+Criando a coluna de data
+```{r}
+buscas_com_data <- buscas %>%
+    mutate(data = format(session_start_date, "%Y-%m-%d")) 
+```
+
+Vendo a distribuição dos dados
+```{r}
+buscas_com_data %>%
+    ggplot(aes(x = data, y = num_clicks)) + 
+    geom_point() 
+```
+
+Trabalhando com a média de dias
+```{r}
+media <- buscas_com_data %>% 
+  group_by(data) %>% 
+  summarise(media_click = mean(num_clicks)) # ajustar para mostrar todas as datas
+
+media %>%
+    ggplot(aes(x = as.Date(data), y = media_click)) +
+    geom_line()
+```
+
+Which results do people tend to try first? How does it change day-to-day?
+What is our daily overall zero results rate? How does it vary between the groups?
+
+
+Qual é a nossa taxa de cliques geral diária? Como isso varia entre os grupos?
+Quais resultados as pessoas tendem a tentar primeiro? Como isso muda no dia-a-dia?
+Qual é a nossa taxa de resultados zero no geral? Como isso varia entre os grupos?
