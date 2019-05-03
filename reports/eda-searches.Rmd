@@ -1,6 +1,7 @@
 ---
 title: "EDA buscas"
 output: html_notebook
+author: Aline Costa
 ---
 
 O objeto principal da análise são as buscas e a navegação depois da busca. Criamos esses dados a partir dos dados originais da wikimedia em `/data/search_data.csv`. 
@@ -24,7 +25,7 @@ buscas %>%
     geom_histogram(binwidth = 5) 
 ```
 
-What is our daily overall clickthrough rate? How does it vary between the groups?
+### What is our daily overall clickthrough rate? How does it vary between the groups?
 Passando os dias, como a média vai evoluindo? Depois add os grupos.
 
 Criando a coluna de data
@@ -40,7 +41,7 @@ buscas_com_data %>%
     geom_point() 
 ```
 
-Trabalhando com a média de dias
+Trabalhando com a média de dias. Considerando que a média de cliques é a média geral de cliques em cada dia.
 ```{r}
 media <- buscas_com_data %>% 
   group_by(data) %>% 
@@ -48,13 +49,77 @@ media <- buscas_com_data %>%
 
 media %>%
     ggplot(aes(x = as.Date(data), y = media_click)) +
-    geom_line()
+    geom_line() + 
+    labs(
+        y = "Média de cliques",
+        x = "Data",
+        title = "Média de cliques por dia") +
+    geom_point()
+```
+Observando a visualização acima pordemos ver que, de modo geral, a média de cliques varia entre X e Y. 
+
+E considerando com os grupos:
+```{r}
+media <- buscas_com_data %>% 
+  group_by(data, group) %>% 
+  summarise(media_click = mean(num_clicks)) # ajustar para mostrar todas as datas
+
+
+media %>%
+    ggplot(aes(x = as.Date(data), y = media_click, color = group)) +
+    geom_line() + 
+    labs(
+        y = "Média de cliques",
+        x = "Data",
+        title = "Média de cliques por dia e grupos") +
+    geom_point()
 ```
 
-Which results do people tend to try first? How does it change day-to-day?
-What is our daily overall zero results rate? How does it vary between the groups?
+E quando consideramos os dois grupos separadamente a diferença é bem visível. No grupo 'a', a variação fica entre X e Y e no grupo 'b'...
 
 
-Qual é a nossa taxa de cliques geral diária? Como isso varia entre os grupos?
+### Which results do people tend to try first? How does it change day-to-day?
 Quais resultados as pessoas tendem a tentar primeiro? Como isso muda no dia-a-dia?
+
+Vamos ver primeiro os 16 resultads mais clicados. Ressaltando que removemos os casos onde não houve clique em nenhum link.
+```{r}
+busca_com_contagem_cliques <- buscas %>% 
+  group_by(first_click) %>% 
+  summarise(count_click = n()) %>%
+    arrange(desc(count_click)) %>%
+    top_n(16)
+
+busca_com_contagem_cliques %>%
+    filter (first_click != "NA") %>%
+    ggplot(aes(x = first_click, y = count_click)) +
+    geom_point() +
+    scale_y_continuous(limits=c(0, 25000)) +
+    scale_x_continuous(breaks=seq(1, 20, 1)) + 
+    labs(
+        y = "Quantidade de vezes que foi clicado primeiro",
+        x = "Posição do resultado na busca retornada",
+        title = "Classificação do primeiro clique para os resultados da busca") 
+
+```
+
+Pelo gráfico acima podemos ver que os resultados que as essoas tendem a tentar primeiro são os primeiros da lista. Mais especificamente, a sequência de resultados mais acessados é igual para os 10 primeiros resultados. Depois varia um pouco. 
+
+Para analisar a distribuição dos cliques ao longo dos dias vamos gerar gráficos separados para os dias da semana.
+
+```{r}
+buscas_com_data %>% 
+    filter (first_click < 25) %>%
+    ggplot(aes(color = data, x = first_click, alpha=0.5)) + 
+    geom_density() + 
+    labs(
+        y = "Densidade",
+        x = "Posição do 1º clique no resultado da busca",
+        title = "Distribuição dos primeiros cliques ao longo dos dias ") 
+```
+
+Pela visualização acima não conseguimos distriguir variação significante nos primeiros links clicados (limitados aos 25 primeiros) ao longo dos dias. Vamos trabalhar com outros dados para tentar distinguir melhor... 
+
+
+### What is our daily overall zero results rate? How does it vary between the groups?
 Qual é a nossa taxa de resultados zero no geral? Como isso varia entre os grupos?
+
