@@ -170,7 +170,7 @@ buscas_com_results_zero %>%
     labs(
         y = "Quantidade de buscas com zero resultados",
         x = "Data",
-        title = "Distribuição de buscas com zero resultados ao longo dos dias ") 
+        title = "Distribuição de buscas com zero resultados ao longo dos dias ", fill="Resultado zero") 
 ```
 rlang::last_error()
 
