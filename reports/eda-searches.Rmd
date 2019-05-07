@@ -133,6 +133,10 @@ buscas_com_data %>%
 
 Podemos ver que a distribuição de cliques segue praticamente o mesmo formato ao longo dos dias, se concentrando nos 5 primeiros resultados da busca. O que podemos identificar também são algumas poucas diferenças nas caldas das distribuições e que no dia 05  aparentemente foram realizadas menos buscas.
 
+Para visualizar melhor as diferenças, fixar uma porcentagem e ver quais posições são clicadas por aquele pessoal OU fixar a posição e ver quantos por cento clicam nela.
+
+
+
 ### What is our daily overall zero results rate? How does it vary between the groups?
 Qual é a nossa taxa de resultados zero no geral? Como isso varia entre os grupos?
 
@@ -149,26 +153,28 @@ buscas_com_data %>%
         title = "Distribuição de buscas com zero resultados ao longo dos dias ") 
 ```
 
-HERE Para visualizar melhor a proporção de resultados zero vamos adicionar também a quantidade total de buscas.
+Para visualizar melhor a proporção de resultados zero vamos adicionar também a quantidade total de buscas.
 
 Criando a coluna de é busca "eh_zero"
 ```{r}
-buscas_com_results_zero <- buscas %>%
+buscas_com_results_zero <- buscas_com_data %>%
     mutate(eh_resultado_zero = results == 0) 
 ```
 
 
 ```{r}
 buscas_com_results_zero %>% 
-    filter(!is.na(results) & !is.na(eh_resultado_zero)) %>%
-    ggplot(aes(x = data, fill=eh_resultado_zero)) + 
-    geom_bar(stat="identity", position=position_dodge()) +
+    filter(!is.na(results) & !is.na(data)) %>%
+    ggplot(aes(data, fill=eh_resultado_zero)) + 
+    geom_bar(position=position_dodge()) +
     labs(
         y = "Quantidade de buscas com zero resultados",
         x = "Data",
         title = "Distribuição de buscas com zero resultados ao longo dos dias ") 
 ```
+rlang::last_error()
 
+HERE ver o gráfico acima em porcentagem?
 
 No geral, a quantidade de resultados zero retornados por cada grupo.
 
@@ -184,6 +190,98 @@ buscas_com_data %>%
 ```
 
 Vemos que o grupo de buscas com o Algoritmo 'a' retorna uma maior quantidade de buscas com zero resultados. MAS TENHO A MESMA QUANTIDADE DE REGISTROS PARA OS DOIS ALGORITMOS? USAR A PROPORÇÃO!
-------------
+
+### Let session length be approximately the time between the first event and the last event in a session. Choose a variable from the dataset and describe its relationship to session length. Visualize the relationship.
+A duração da sessão é aproximadamente o tempo entre o primeiro e o último evento de uma sessão. Escolha uma variável do conjunto de dados e descreva sua relação com o tamanho da sessão. Visualize o relacionamento.
+
+Vamos estudar a relação da quantidade de cliques com o tamanho da sessão.
+
+Vendo a distribuição dos dados para as variáveis session_length e num_clicks
+```{r}
+buscas_com_data %>%
+    ggplot(aes(x = session_length, y = num_clicks)) + 
+    geom_point() 
+```
+
+Desconsiderando os registros de session_length zero
+```{r}
+buscas_com_data %>%
+    filter (session_length != 0) %>%
+    ggplot(aes(x = session_length, y = num_clicks)) + 
+    geom_point() 
+```
+
+A primeira impressão observando o gráfico acima é que o tamanho da sessão não teria muita influência na quantidade de cliques. Esperaríamos que as sessões maiores apresentassem uma maior qtd de cliques, mas essa concentração é maior em sessões menores. 
+
+Vamos ver como é distribuído o tamanho das sessões.
+```{r}
+buscas_com_data %>%
+    filter (session_length != 0) %>%
+    ggplot(aes(x = session_length)) + 
+    geom_density() 
+```
+
+Vamos analisar a distribuição aplicando o log de base 10 e vendo para grupos diferentes.
+
+```{r}
+buscas_com_data %>%
+    filter (session_length != 0) %>%
+    ggplot(aes(x = session_length, y = num_clicks)) + 
+    geom_point() +
+    scale_x_continuous(trans = 'log10') +
+    facet_wrap(~ group)
+```
+
+Mais cliques em sessões de tamanho médio?
+
+Para confirmar/refutar vamos ver os valores de correlação:
+```{r}
+buscas_com_data %>%
+    summarise(
+    pearson = cor(session_length, num_clicks, method = "pearson"), 
+    spearman = cor(session_length, num_clicks, method = "spearman"), 
+    kendall = cor(session_length, num_clicks, method = "kendall")
+  )
+```
+
+Valores de correlação baixa. Então...
+
+Vamos separar os dados por grupos para ver se a correlação é maior para algum deles.
+HERE colocar dois de pontos lado a lado
+
+Para o grupo 'a'
+```{r}
+buscas_com_data %>%
+    filter(group == 'a') %>%
+    summarise(
+    pearson = cor(session_length, num_clicks, method = "pearson"), 
+    spearman = cor(session_length, num_clicks, method = "spearman"), 
+    kendall = cor(session_length, num_clicks, method = "kendall")
+  )
+```
+
+Para o grupo 'b'
+```{r}
+buscas_com_data %>%
+    filter(group == 'b') %>%
+    summarise(
+    pearson = cor(session_length, num_clicks, method = "pearson"), 
+    spearman = cor(session_length, num_clicks, method = "spearman"), 
+    kendall = cor(session_length, num_clicks, method = "kendall")
+  )
+```
+
+A correlação é maior para o grupo 'b'.
+
+
+session_length x num_clicks
+sessões maiores tem maior qtd de cliques?
+plotar o tamanho das sessões. gráfico ruim
+plota a distribuição com pontos, normal
+vê no outro lab como alterei os dados p ver as relações
+depois separa por grupos para ver se muda
+muda ao longo dos dias?
+existe correlação ou não? positiva? negativa?
+colocar os labels
 
 
