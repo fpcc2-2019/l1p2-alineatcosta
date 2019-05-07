@@ -81,7 +81,7 @@ E quando consideramos os dois grupos separadamente a diferença é bem visível.
 ### Which results do people tend to try first? How does it change day-to-day?
 Quais resultados as pessoas tendem a tentar primeiro? Como isso muda no dia-a-dia?
 
-Vamos ver primeiro os 16 resultads mais clicados. Ressaltando que removemos os casos onde não houve clique em nenhum link.
+Vamos ver primeiro os 16 resultados mais clicados. Ressaltando que removemos os casos onde não houve clique em nenhum link.
 ```{r}
 busca_com_contagem_cliques <- buscas %>% 
   group_by(first_click) %>% 
@@ -97,14 +97,14 @@ busca_com_contagem_cliques %>%
     scale_x_continuous(breaks=seq(1, 20, 1)) + 
     labs(
         y = "Quantidade de vezes que foi clicado primeiro",
-        x = "Posição do resultado na busca retornada",
+        x = "Posição do resultado nas 16 posições mais clicadas",
         title = "Classificação do primeiro clique para os resultados da busca") 
 
 ```
 
-Pelo gráfico acima podemos ver que os resultados que as essoas tendem a tentar primeiro são os primeiros da lista. Mais especificamente, a sequência de resultados mais acessados é igual para os 10 primeiros resultados. Depois varia um pouco. 
+Pelo gráfico acima podemos ver que os resultados que as pessoas tendem a clicar primeiro são os primeiros da lista. Mais especificamente, a sequência de resultados mais acessados é igual para os 10 primeiros resultados. Depois varia um pouco. 
 
-Para analisar a distribuição dos cliques ao longo dos dias vamos gerar gráficos separados para os dias da semana.
+Para analisar a distribuição dos cliques ao longo dos dias vamos tentar comparar os dias da semana.
 
 ```{r}
 buscas_com_data %>% 
@@ -117,9 +117,73 @@ buscas_com_data %>%
         title = "Distribuição dos primeiros cliques ao longo dos dias ") 
 ```
 
-Pela visualização acima não conseguimos distriguir variação significante nos primeiros links clicados (limitados aos 25 primeiros) ao longo dos dias. Vamos trabalhar com outros dados para tentar distinguir melhor... 
+Pela visualização acima não conseguimos distriguir variação significante nos primeiros links clicados (limitados aos 25 primeiros) ao longo dos dias. Vamos visualizar os dias em gráficos separados... 
 
+```{r}
+buscas_com_data %>% 
+    filter (first_click < 25) %>%
+    ggplot(aes(x = first_click, fill = data)) +
+    geom_histogram(binwidth = 2, na.rm = TRUE) +
+    facet_wrap(~ data, nrow=2) +
+    labs(
+        y = "Densidade",
+        x = "Posição do 1º clique no resultado da busca",
+        title = "Distribuição dos primeiros cliques ao longo dos dias ") 
+```
+
+Podemos ver que a distribuição de cliques segue praticamente o mesmo formato ao longo dos dias, se concentrando nos 5 primeiros resultados da busca. O que podemos identificar também são algumas poucas diferenças nas caldas das distribuições e que no dia 05  aparentemente foram realizadas menos buscas.
 
 ### What is our daily overall zero results rate? How does it vary between the groups?
 Qual é a nossa taxa de resultados zero no geral? Como isso varia entre os grupos?
+
+Vamos ver a distribuição de resultados zero ao longo dos dias. 
+
+```{r}
+buscas_com_data %>% 
+    filter(results == 0) %>% 
+    ggplot(aes(x = data)) + 
+    geom_bar() +
+    labs(
+        y = "Quantidade de buscas com zero resultados",
+        x = "Data",
+        title = "Distribuição de buscas com zero resultados ao longo dos dias ") 
+```
+
+HERE Para visualizar melhor a proporção de resultados zero vamos adicionar também a quantidade total de buscas.
+
+Criando a coluna de é busca "eh_zero"
+```{r}
+buscas_com_results_zero <- buscas %>%
+    mutate(eh_resultado_zero = results == 0) 
+```
+
+
+```{r}
+buscas_com_results_zero %>% 
+    filter(!is.na(results) & !is.na(eh_resultado_zero)) %>%
+    ggplot(aes(x = data, fill=eh_resultado_zero)) + 
+    geom_bar(stat="identity", position=position_dodge()) +
+    labs(
+        y = "Quantidade de buscas com zero resultados",
+        x = "Data",
+        title = "Distribuição de buscas com zero resultados ao longo dos dias ") 
+```
+
+
+No geral, a quantidade de resultados zero retornados por cada grupo.
+
+```{r}
+buscas_com_data %>% 
+    filter(!is.na(results) & results == 0) %>% 
+    ggplot(aes(x = group, fill=group)) + 
+    geom_bar() +
+    labs(
+        y = "Quantidade de buscas com zero resultados",
+        x = "Grupo",
+        title = "Distribuição de buscas com zero resultados pelos grupos ") 
+```
+
+Vemos que o grupo de buscas com o Algoritmo 'a' retorna uma maior quantidade de buscas com zero resultados. MAS TENHO A MESMA QUANTIDADE DE REGISTROS PARA OS DOIS ALGORITMOS? USAR A PROPORÇÃO!
+------------
+
 
