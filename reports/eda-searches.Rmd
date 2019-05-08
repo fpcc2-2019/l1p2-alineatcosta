@@ -27,8 +27,7 @@ buscas %>%
     geom_histogram(binwidth = 5) 
 ```
 
-### What is our daily overall clickthrough rate? How does it vary between the groups?
-Passando os dias, como a média vai evoluindo? Depois add os grupos.
+### Passando os dias, como a média vai evoluindo? Depois add os grupos.
 
 Criando uma coluna de data, derivada da coluna session_start_date.
 ```{r}
@@ -92,8 +91,7 @@ media_com_cliques %>%
 
 Agora podemos ver mais claramente uma grande diferença na média de cliques para os grupos a e b nos dias 1, 2, e 3 de março.
 
-### Which results do people tend to try first? How does it change day-to-day?
-Quais resultados as pessoas tendem a tentar primeiro? Como isso muda no dia-a-dia?
+### Quais resultados as pessoas tendem a tentar primeiro? Como isso muda no dia-a-dia?
 
 Vamos ver a classificação geral para os 16 resultados mais clicados. Ressaltando que não vamos considerar os casos onde não houve clique em nenhum link.
 ```{r}
@@ -165,14 +163,13 @@ busca_com_contagem_cliques_maior_que_5 %>%
     ggplot(aes(x = as.Date(data), y = count_click)) +
     geom_line() +
     labs(
-        y = "Quantidade de buscas que foi clicado primeiro um link maior que 5",
+        y = "Buscas onde um link maior que 5 foi clicado primeiro",
         x = "Data",
         title = "Classificação de buscas que foi clicado primeiro um link maior que 5") +
     geom_point(color = "red")
 ```
 
-### What is our daily overall zero results rate? How does it vary between the groups?
-Qual é a nossa taxa de resultados zero no geral? Como isso varia entre os grupos?
+### Qual é a nossa taxa de resultados zero no geral? Como isso varia entre os grupos?
 
 Vamos ver a distribuição de resultados zero ao longo dos dias. 
 
@@ -223,8 +220,7 @@ buscas_com_data %>%
 
 Vemos que o grupo de buscas com o Algoritmo 'a' retorna uma maior quantidade de buscas com zero resultados. 
 
-### Let session length be approximately the time between the first event and the last event in a session. Choose a variable from the dataset and describe its relationship to session length. Visualize the relationship.
-A duração da sessão é aproximadamente o tempo entre o primeiro e o último evento de uma sessão. Escolha uma variável do conjunto de dados e descreva sua relação com o tamanho da sessão. Visualize o relacionamento.
+### A duração da sessão é aproximadamente o tempo entre o primeiro e o último evento de uma sessão. Escolha uma variável do conjunto de dados e descreva sua relação com o tamanho da sessão. Visualize o relacionamento.
 
 Vamos estudar a relação entre quantidade de cliques e o tamanho de cada sessão, onde a duração da sessão é aproximadamente o tempo entre o primeiro e o último evento de uma sessão. Vamos considerar como suposição inicial de que as sessões maiores apresentam uma maior quantidade de cliques. 
 
@@ -233,7 +229,11 @@ Vamos inicialmente ver a distribuição dos dados para as variáveis session_len
 buscas_com_data %>%
     filter (session_length != 0) %>%
     ggplot(aes(x = session_length, y = num_clicks)) + 
-    geom_point() 
+    geom_point()  +
+    labs(
+        y = "Quantidade de cliques",
+        x = "Tamanho da sessão",
+        title = "Distribuição dos cliques por sessões") 
 ```
 
 A primeira impressão observando o gráfico acima é que o tamanho da sessão não teria muita influência na quantidade de cliques. Então nossa suposição inicial não se mostra válida. A maior quantidade de cliques parace se concentrar em sessões menores.
@@ -245,7 +245,11 @@ buscas_com_data %>%
     ggplot(aes(x = session_length, y = num_clicks)) + 
     geom_point() +
     scale_x_continuous(trans = 'log10') +
-    facet_wrap(~ group)
+    facet_wrap(~ group)  +
+    labs(
+        y = "Quantidade de cliques",
+        x = "Tamanho da sessão",
+        title = "Distribuição dos cliques por sessões e por grupos") 
 ```
 
 A análise não parece indicar que existe uma correlação entre a quantidade de cliques e o tamanho de cada sessão. Para confirmar nossa intuição vemos abaixo os valores sumarizados pelos métodos de correlação pearson, spearman e kendall. Os valores indicam uma baixa correlação entre as variáveis. 0.01 para pearson, 0.25 para spearman e kendall 0.21.
