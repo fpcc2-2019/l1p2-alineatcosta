@@ -1,7 +1,9 @@
 ---
 title: "EDA buscas"
-output: html_notebook
-author: Aline Costa
+author: "Aline Costa"
+output:
+  html_document:
+    df_print: paged
 ---
 
 O objeto principal da análise são as buscas e a navegação depois da busca. Criamos esses dados a partir dos dados originais da wikimedia em `/data/search_data.csv`. 
@@ -25,27 +27,19 @@ buscas %>%
     geom_histogram(binwidth = 5) 
 ```
 
-### What is our daily overall clickthrough rate? How does it vary between the groups?
-Passando os dias, como a média vai evoluindo? Depois add os grupos.
+### Passando os dias, como a média vai evoluindo? Depois add os grupos.
 
-Criando a coluna de data
+Criando uma coluna de data, derivada da coluna session_start_date.
 ```{r}
 buscas_com_data <- buscas %>%
     mutate(data = format(session_start_date, "%Y-%m-%d")) 
 ```
 
-Vendo a distribuição dos dados
-```{r}
-buscas_com_data %>%
-    ggplot(aes(x = data, y = num_clicks)) + 
-    geom_point() 
-```
-
-Trabalhando com a média de dias. Considerando que a média de cliques é a média geral de cliques em cada dia.
+Para analisar a variação de cliques ao longo dos dias, vamos considerar que a média de cliques é a média geral de cliques em cada dia.
 ```{r}
 media <- buscas_com_data %>% 
   group_by(data) %>% 
-  summarise(media_click = mean(num_clicks)) # ajustar para mostrar todas as datas
+  summarise(media_click = mean(num_clicks))
 
 media %>%
     ggplot(aes(x = as.Date(data), y = media_click)) +
@@ -54,11 +48,11 @@ media %>%
         y = "Média de cliques",
         x = "Data",
         title = "Média de cliques por dia") +
-    geom_point()
+    geom_point(color = "red")
 ```
-Observando a visualização acima pordemos ver que, de modo geral, a média de cliques varia entre X e Y. 
+Observando a visualização acima pordemos ver que, de modo geral, a média de cliques é maior nos primeiros dias e sempre menor que 1. Isso pode ser explicado pelo grande número de pesquisas onde o usuário não clica em nenhum resultado.  
 
-E considerando com os grupos:
+Vamos ver se essa observação se mantém analisando os grupos 'a' e 'b' separadamente:
 ```{r}
 media <- buscas_com_data %>% 
   group_by(data, group) %>% 
@@ -75,13 +69,31 @@ media %>%
     geom_point()
 ```
 
-E quando consideramos os dois grupos separadamente a diferença é bem visível. No grupo 'a', a variação fica entre X e Y e no grupo 'b'...
+A média de cliques se mantém menor que 1 considerando os grupos separadamente, no entanto, é mais fácil notar alguma diferença entre eles. Para o grupo 'a', a média de cliques é mais alta que as média para o grupo 'b', considerando nossos dados.
+
+Vamos ver a mesma visualização acima mas sem considerar as sessões onde não houve nenhum clique.
+```{r}
+media_com_cliques <- buscas_com_data %>% 
+  filter(num_clicks != 0) %>% 
+  group_by(data, group) %>% 
+  summarise(media_click = mean(num_clicks)) # ajustar para mostrar todas as datas
 
 
-### Which results do people tend to try first? How does it change day-to-day?
-Quais resultados as pessoas tendem a tentar primeiro? Como isso muda no dia-a-dia?
+media_com_cliques %>%
+    ggplot(aes(x = as.Date(data), y = media_click, color = group)) +
+    geom_line() + 
+    labs(
+        y = "Média de cliques",
+        x = "Data",
+        title = "Média de cliques por dia e grupos", color = "Grupo") +
+    geom_point()
+```
 
-Vamos ver primeiro os 16 resultados mais clicados. Ressaltando que removemos os casos onde não houve clique em nenhum link.
+Agora podemos ver mais claramente uma grande diferença na média de cliques para os grupos a e b nos dias 1, 2, e 3 de março.
+
+### Quais resultados as pessoas tendem a tentar primeiro? Como isso muda no dia-a-dia?
+
+Vamos ver a classificação geral para os 16 resultados mais clicados. Ressaltando que não vamos considerar os casos onde não houve clique em nenhum link.
 ```{r}
 busca_com_contagem_cliques <- buscas %>% 
   group_by(first_click) %>% 
@@ -102,9 +114,9 @@ busca_com_contagem_cliques %>%
 
 ```
 
-Pelo gráfico acima podemos ver que os resultados que as pessoas tendem a clicar primeiro são os primeiros da lista. Mais especificamente, a sequência de resultados mais acessados é igual para os 10 primeiros resultados. Depois varia um pouco. 
+Pelo gráfico acima podemos ver que os resultados que as pessoas tendem a clicar primeiro são os links exibidos primeiros. Mais especificamente, a sequência de resultados mais acessados é igual para os 10 primeiros resultados. Depois varia um pouco. Os links 15, 16, 17, 18 e 19 não aparecem entre os 16 mais clicados.
 
-Para analisar a distribuição dos cliques ao longo dos dias vamos tentar comparar os dias da semana.
+Para analisar se a distribuição dos cliques muda ao longo dos dias vamos adicionar os dias da semana.
 
 ```{r}
 buscas_com_data %>% 
@@ -117,7 +129,7 @@ buscas_com_data %>%
         title = "Distribuição dos primeiros cliques ao longo dos dias ") 
 ```
 
-Pela visualização acima não conseguimos distriguir variação significante nos primeiros links clicados (limitados aos 25 primeiros) ao longo dos dias. Vamos visualizar os dias em gráficos separados... 
+Com uma visualização que sobrepõe a distribuição para os dias da semana não conseguimos distriguir variação significante nos primeiros links clicados (limitados aos 25 primeiros) ao longo dos dias. Isso indica que a distribuição geral segue da mesma forma para os dias. Vamos visualizar os dias em gráficos separados... 
 
 ```{r}
 buscas_com_data %>% 
@@ -131,14 +143,33 @@ buscas_com_data %>%
         title = "Distribuição dos primeiros cliques ao longo dos dias ") 
 ```
 
-Podemos ver que a distribuição de cliques segue praticamente o mesmo formato ao longo dos dias, se concentrando nos 5 primeiros resultados da busca. O que podemos identificar também são algumas poucas diferenças nas caldas das distribuições e que no dia 05  aparentemente foram realizadas menos buscas.
+Podemos ver que ainda assim não é possível distinguir variações claras. A distribuição de cliques segue praticamente o mesmo formato ao longo dos dias, se concentrando nos 5 primeiros resultados da busca. O que podemos identificar apenas são algumas poucas diferenças nas caldas das distribuições e que no dia 05  aparentemente foram realizadas menos buscas.
 
-Para visualizar melhor as diferenças, fixar uma porcentagem e ver quais posições são clicadas por aquele pessoal OU fixar a posição e ver quantos por cento clicam nela.
+Como os resultados mais clicados se concentram sempre nos 5 primeiros, vamos ver quantos registros clicam primeiro em um link de posição maior que 5.
+```{r}
+nrow(buscas_com_data %>% filter(first_click > 5))
+nrow(buscas_com_data)
+```
+Temos, portanto, 2.980 resultados onde o primeiro clique foi dado em um link maior que 5. Isso significa aproximadamente 2.19% dos 136234 registros analisados. Lembrando que em muitos dos 136234 não houve clique em nenhum link.
 
+Como mostrado abaixo, essa quantidade de cliques em links maiores que o quinto varia com os dias.
+```{r}
+busca_com_contagem_cliques_maior_que_5 <- buscas_com_data %>% 
+  filter(first_click > 5) %>%
+  group_by(data) %>% 
+  summarise(count_click = n())
 
+busca_com_contagem_cliques_maior_que_5 %>%
+    ggplot(aes(x = as.Date(data), y = count_click)) +
+    geom_line() +
+    labs(
+        y = "Buscas onde um link maior que 5 foi clicado primeiro",
+        x = "Data",
+        title = "Classificação de buscas que foi clicado primeiro um link maior que 5") +
+    geom_point(color = "red")
+```
 
-### What is our daily overall zero results rate? How does it vary between the groups?
-Qual é a nossa taxa de resultados zero no geral? Como isso varia entre os grupos?
+### Qual é a nossa taxa de resultados zero no geral? Como isso varia entre os grupos?
 
 Vamos ver a distribuição de resultados zero ao longo dos dias. 
 
@@ -153,7 +184,7 @@ buscas_com_data %>%
         title = "Distribuição de buscas com zero resultados ao longo dos dias ") 
 ```
 
-Para visualizar melhor a proporção de resultados zero vamos adicionar também a quantidade total de buscas.
+Para visualizar melhor a proporção de resultados zero ao longo dos dias vamos adicionar também a quantidade total de buscas realizadas.
 
 Criando a coluna de é busca "eh_zero"
 ```{r}
@@ -174,8 +205,6 @@ buscas_com_results_zero %>%
 ```
 rlang::last_error()
 
-HERE ver o gráfico acima em porcentagem?
-
 No geral, a quantidade de resultados zero retornados por cada grupo.
 
 ```{r}
@@ -189,52 +218,41 @@ buscas_com_data %>%
         title = "Distribuição de buscas com zero resultados pelos grupos ") 
 ```
 
-Vemos que o grupo de buscas com o Algoritmo 'a' retorna uma maior quantidade de buscas com zero resultados. MAS TENHO A MESMA QUANTIDADE DE REGISTROS PARA OS DOIS ALGORITMOS? USAR A PROPORÇÃO!
+Vemos que o grupo de buscas com o Algoritmo 'a' retorna uma maior quantidade de buscas com zero resultados. 
 
-### Let session length be approximately the time between the first event and the last event in a session. Choose a variable from the dataset and describe its relationship to session length. Visualize the relationship.
-A duração da sessão é aproximadamente o tempo entre o primeiro e o último evento de uma sessão. Escolha uma variável do conjunto de dados e descreva sua relação com o tamanho da sessão. Visualize o relacionamento.
+### A duração da sessão é aproximadamente o tempo entre o primeiro e o último evento de uma sessão. Escolha uma variável do conjunto de dados e descreva sua relação com o tamanho da sessão. Visualize o relacionamento.
 
-Vamos estudar a relação da quantidade de cliques com o tamanho da sessão.
+Vamos estudar a relação entre quantidade de cliques e o tamanho de cada sessão, onde a duração da sessão é aproximadamente o tempo entre o primeiro e o último evento de uma sessão. Vamos considerar como suposição inicial de que as sessões maiores apresentam uma maior quantidade de cliques. 
 
-Vendo a distribuição dos dados para as variáveis session_length e num_clicks
-```{r}
-buscas_com_data %>%
-    ggplot(aes(x = session_length, y = num_clicks)) + 
-    geom_point() 
-```
-
-Desconsiderando os registros de session_length zero
+Vamos inicialmente ver a distribuição dos dados para as variáveis session_length e num_clicks. Para uma análise mais precisa, vamos desconsiderar os registros de session_length zero.
 ```{r}
 buscas_com_data %>%
     filter (session_length != 0) %>%
     ggplot(aes(x = session_length, y = num_clicks)) + 
-    geom_point() 
+    geom_point()  +
+    labs(
+        y = "Quantidade de cliques",
+        x = "Tamanho da sessão",
+        title = "Distribuição dos cliques por sessões") 
 ```
 
-A primeira impressão observando o gráfico acima é que o tamanho da sessão não teria muita influência na quantidade de cliques. Esperaríamos que as sessões maiores apresentassem uma maior qtd de cliques, mas essa concentração é maior em sessões menores. 
+A primeira impressão observando o gráfico acima é que o tamanho da sessão não teria muita influência na quantidade de cliques. Então nossa suposição inicial não se mostra válida. A maior quantidade de cliques parace se concentrar em sessões menores.
 
-Vamos ver como é distribuído o tamanho das sessões.
-```{r}
-buscas_com_data %>%
-    filter (session_length != 0) %>%
-    ggplot(aes(x = session_length)) + 
-    geom_density() 
-```
-
-Vamos analisar a distribuição aplicando o log de base 10 e vendo para grupos diferentes.
-
+No entanto, podemos ver que os dados são muito concentrados a esquerda e abaixo, tornando difícil fazer qualquer observação sobre a correlação. Para melhorar a análise, vamos aplicando o log de base 10 nos diferentes grupos. Assim, a medida da correlação não será tão influenciada pelos outliers.
 ```{r}
 buscas_com_data %>%
     filter (session_length != 0) %>%
     ggplot(aes(x = session_length, y = num_clicks)) + 
     geom_point() +
     scale_x_continuous(trans = 'log10') +
-    facet_wrap(~ group)
+    facet_wrap(~ group)  +
+    labs(
+        y = "Quantidade de cliques",
+        x = "Tamanho da sessão",
+        title = "Distribuição dos cliques por sessões e por grupos") 
 ```
 
-Mais cliques em sessões de tamanho médio?
-
-Para confirmar/refutar vamos ver os valores de correlação:
+A análise não parece indicar que existe uma correlação entre a quantidade de cliques e o tamanho de cada sessão. Para confirmar nossa intuição vemos abaixo os valores sumarizados pelos métodos de correlação pearson, spearman e kendall. Os valores indicam uma baixa correlação entre as variáveis. 0.01 para pearson, 0.25 para spearman e kendall 0.21.
 ```{r}
 buscas_com_data %>%
     summarise(
@@ -244,10 +262,7 @@ buscas_com_data %>%
   )
 ```
 
-Valores de correlação baixa. Então...
-
-Vamos separar os dados por grupos para ver se a correlação é maior para algum deles.
-HERE colocar dois de pontos lado a lado
+Entre os grupo a correlação é um pouco diferente. A correlação é maior para o grupo 'b', como pode ser visto abaixo. Para o grupo 'a' a correlação varia entre 0.008 e 0.06 e para o grupo 'b' fica entre 0.1 e 0.6
 
 Para o grupo 'a'
 ```{r}
@@ -270,18 +285,4 @@ buscas_com_data %>%
     kendall = cor(session_length, num_clicks, method = "kendall")
   )
 ```
-
-A correlação é maior para o grupo 'b'.
-
-
-session_length x num_clicks
-sessões maiores tem maior qtd de cliques?
-plotar o tamanho das sessões. gráfico ruim
-plota a distribuição com pontos, normal
-vê no outro lab como alterei os dados p ver as relações
-depois separa por grupos para ver se muda
-muda ao longo dos dias?
-existe correlação ou não? positiva? negativa?
-colocar os labels
-
 
