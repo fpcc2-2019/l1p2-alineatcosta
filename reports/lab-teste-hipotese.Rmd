@@ -61,16 +61,80 @@ theta_embaralhado(buscas, 1:NROW(buscas))
 
 ```{r}
 library(boot)
+library(broom)
 buscas %>% 
-    boot(statistic = theta_embaralhado, R = 4000) %>% 
+    boot(statistic = theta_embaralhado, R = 2000) %>% 
     tidy(conf.level = 0.95, 
          conf.int = TRUE)
 ```
+
 
 # 2. A diferença na proporção buscas com zero resultados nos grupos A e B
 
 Criando a coluna de é busca "eh_zero"
 ```{r}
-buscas_com_results_zero <- buscas_com_data %>%
+buscas_com_results_zero <- buscas %>%
     mutate(eh_resultado_zero = results == 0) 
+```
+
+# Vendo a diferença na amostra
+```{r}
+group_a = buscas_com_results_zero  %>% group_by(group) %>% summarise(prop_zero = sum(eh_resultado_zero)/n()) %>% filter(group == "a") %>% pull(prop_zero)
+group_b = buscas_com_results_zero  %>% group_by(group) %>% summarise(prop_zero = sum(eh_resultado_zero)/n()) %>% filter(group == "b") %>% pull(prop_zero)
+
+
+theta_geral = group_a - group_b
+
+theta_geral
+```
+
+## Com teste de hipótese
+
+
+# ENTENDER COMO PEGA O VALOR E O P-VALOR
+```{r}
+theta_embaralhado = function(d){
+    embaralhados = d %>% 
+        mutate(grupo_embaralhado = sample(group, n())) %>% 
+        group_by(grupo_embaralhado) %>% 
+        summarise(prop = sum(eh_resultado_zero)/n()) 
+    
+    grupo_a = embaralhados %>% filter(grupo_embaralhado == "a") %>% pull(prop)
+    grupo_b = embaralhados %>% filter(grupo_embaralhado == "b") %>% pull(prop)
+    
+    grupo_a - grupo_b
+}
+theta_embaralhado(buscas_com_results_zero)
+```
+
+```{r}
+mean(abs(diffs1) >= abs(theta_embaralhado(buscas_com_results_zero)))
+```
+
+
+## Com IC
+```{r}
+theta_embaralhado = function(d, i){
+    buscas2 = d %>% 
+         slice(i) %>% 
+        group_by(group) %>% 
+        summarise(prop = sum(eh_resultado_zero)/n()) 
+    
+    grupo_a = buscas2 %>% filter(group == "a") %>% pull(prop)
+    grupo_b = buscas2 %>% filter(group == "b") %>% pull(prop)
+    
+    grupo_a - grupo_b
+}
+
+theta_embaralhado(buscas_com_results_zero, 1:NROW(buscas))
+```
+
+
+```{r}
+library(boot)
+library(broom)
+buscas_com_results_zero %>% 
+    boot(statistic = theta_embaralhado, R = 2000) %>% 
+    tidy(conf.level = 0.95, 
+         conf.int = TRUE)
 ```
