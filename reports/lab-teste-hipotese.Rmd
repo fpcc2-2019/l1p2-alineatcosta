@@ -90,8 +90,6 @@ theta_geral
 
 ## Com teste de hipótese
 
-
-# ENTENDER COMO PEGA O VALOR E O P-VALOR
 ```{r}
 theta_embaralhado = function(d){
     embaralhados = d %>% 
@@ -108,13 +106,27 @@ theta_embaralhado(buscas_com_results_zero)
 ```
 
 ```{r}
-mean(abs(diffs1) >= abs(theta_embaralhado(buscas_com_results_zero)))
+diffs1 = replicate(2000, {theta_embaralhado(buscas_com_results_zero)})
+tibble(diferenca = diffs1) %>% 
+  ggplot(aes(x = diferenca)) + 
+  # geom_histogram(binwidth = .2, fill = "white", color = "darkgreen") + 
+    geom_density(fill = "white", color = "darkgreen") + 
+  geom_vline(xintercept = theta_diff_rate(buscas.por.sessao, 1:NROW(buscas.por.sessao)), 
+             color = "orange") + 
+    geom_vline(xintercept = - theta_diff_rate(buscas.por.sessao, 1:NROW(buscas.por.sessao)), 
+             color = "orange") + 
+    geom_rug()
+
+```
+
+```{r}
+mean(abs(diffs1) >= abs(theta_embaralhado2(buscas_com_results_zero, 1:NROW(buscas))))
 ```
 
 
 ## Com IC
 ```{r}
-theta_embaralhado = function(d, i){
+theta_embaralhado2 = function(d, i){
     buscas2 = d %>% 
          slice(i) %>% 
         group_by(group) %>% 
@@ -126,7 +138,7 @@ theta_embaralhado = function(d, i){
     grupo_a - grupo_b
 }
 
-theta_embaralhado(buscas_com_results_zero, 1:NROW(buscas))
+theta_embaralhado2(buscas_com_results_zero, 1:NROW(buscas))
 ```
 
 
